@@ -50,11 +50,11 @@ recovery caused by the attack.
 | NPO | 0.126 | 0.487 | 0.248 | 0.122 | 0.583 | 0.7 | 0.000 |
 | RMU | 0.105 | 0.561 | 0.525 | 0.420 | 0.594 | 0.8 | 0.004 |
 | SP | 0.124 | 0.486 | 0.203 | 0.079 | 0.513 | 120.6 | 0.393 |
-| **FRP** (β=0.00) | **0.055** | 0.384 | **0.085** | **0.029** | 0.444 | 107.8 | **3.159** |
+| **FRP** (β=0.00) | **0.055** | 0.384 | **0.085** | **0.029** | 0.444 | 111.5 | **3.159** |
 | **FRP** (β=0.15) | 0.099 | 0.494 | 0.157 | 0.058 | 0.517 | 81.4 | 3.020 |
 
 The failure of distance is visible in one comparison: SP has the **larger**
-$\ell_2$ (120.6 vs 107.8) yet recovers **2.7× more** under attack (ΔES 0.079 vs
+$\ell_2$ (120.6 vs 111.5) yet recovers **2.7× more** under attack (ΔES 0.079 vs
 0.029). FRAG ranks them the other way round, correctly. The same ordering holds
 on LLaMA-3.2-3B.
 
@@ -69,9 +69,10 @@ out circularity.
 | Global $\ell_2$ | −0.56 | −0.36 | −0.17 | **+0.13** | −0.36 | −0.10 |
 | **FRAG** | **−0.92** | **−0.85** | **−0.72** | **−0.71** | **−0.78** | **−0.74** |
 
-At 3B, $\ell_2$ loses the correct sign entirely. Averaged over eight effective
-relearning-attack variants (learning rate, optimizer, attack-data mixture,
-fine-tuning horizon), the gap is −0.94 for FRAG against −0.38 for $\ell_2$.
+At 3B, $\ell_2$ loses the correct sign entirely. The ordering also holds across
+eight effective relearning-attack variants (learning rate, optimizer,
+attack-data mixture, fine-tuning horizon), where FRP stays the least recovered
+throughout.
 
 ### Why distance can be spoofed
 
@@ -90,7 +91,7 @@ FRP's advantage survives four matched controls, each holding one confound fixed:
 |---|---|
 | Matched utility | 1.9–4.9× lower ΔES than RMU in every band |
 | Matched forgetting strength | Closest to the gold ES floor, lowest ΔES |
-| Matched sparsity | 3–4× lower pre-attack ES than SP at equal budget |
+| Matched sparsity | 2.6–4.0× lower pre-attack ES than SP at equal budget |
 | Matched update norm | 2.2–2.9× lower ΔES than SP at equal $\lVert\Delta W\rVert_2$ |
 
 ## Status
@@ -101,7 +102,7 @@ WMDP-cyber results will be added here.
 
 ## Paper
 
-- arXiv: *to be added*
+- arXiv: <https://arxiv.org/abs/2608.25429>
 - ACL Anthology: *to be added*
 
 ## Citation
