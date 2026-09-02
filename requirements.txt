@@ -1,0 +1,17 @@
+# Versions used for every number reported in the paper (Python 3.11, CUDA 12.1).
+#
+# The FRAG predictor itself only needs torch, transformers and safetensors. The rest
+# is for FRP pruning, the baselines, and the calibration data loaders. Training,
+# relearning attacks and evaluation run inside OpenUnlearning, which brings its own
+# environment; see docs/REPRODUCE.md.
+torch==2.4.1
+transformers==4.45.1
+safetensors>=0.4.5
+datasets==3.0.1
+numpy==2.2.3
+tqdm>=4.66
+sentencepiece>=0.1.99
+protobuf>=3.20
+
+# optional: run logging for the pruning scripts (--wandb)
+# wandb>=0.18

@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# cached activation norms, run outputs, checkpoints
+norms_cache/
+runs/
+saves/
+outputs/
+*.pt
+*.safetensors
+*.bin
+
+# WMDP corpora are downloaded separately (see docs/REPRODUCE.md)
+data/wmdp/
+
+.DS_Store
