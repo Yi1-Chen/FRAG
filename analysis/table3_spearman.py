@@ -68,11 +68,18 @@ def main():
                     choices=["retain", "forget", "forget_retain"])
     args = ap.parse_args()
 
+    # FRAG is the reported predictor. cosF and cosR are the two terms of Eq. (5), reported
+    # alongside it because Figure 2 turns on how each behaves on its own.
+    cols, labels = ["L2", "FRAG_pct"], ["Global L2", "FRAG"]
     pred = {}
     for path in args.predictors:
-        for r in csv.DictReader(open(path, encoding="utf-8")):
-            pred[(r["model"], r["method"], r["forget_split"])] = (
-                float(r["L2"]), float(r["FRAG_pct"]))
+        reader = csv.DictReader(open(path, encoding="utf-8"))
+        for extra, label in (("cosF_pct", "cos(F, dW2)"), ("cosR_pct", "cos(R, dW2)")):
+            if reader.fieldnames and extra in reader.fieldnames and extra not in cols:
+                cols.append(extra); labels.append(label)
+        for r in reader:
+            pred[(r["model"], r["method"], r["forget_split"])] = tuple(
+                float(r[c]) for c in cols)
 
     delta = {}
     for r in csv.DictReader(open(args.results, encoding="utf-8")):
@@ -93,18 +100,20 @@ def main():
 
     print(f"Spearman rho vs Delta-ES under the {args.attack} attack "
           f"(healthy checkpoints only; more negative is better)\n")
-    print(f"{'':12s} {'Global L2':>21s} {'FRAG':>21s}")
-    print(f"{'':12s} {'all':>10s} {'w/o FRP':>10s} {'all':>10s} {'w/o FRP':>10s}")
+    header = f"{'':12s}" + "".join(f"{lab:>23s}" for lab in labels)
+    sub = f"{'':12s}" + "".join(f"{'all':>11s}{'w/o FRP':>12s}" for _ in labels)
+    print(header)
+    print(sub)
     for label, subset in groups:
         no_frp = [k for k in subset if not k[1].startswith("FRP")]
-        print(f"{label:12s} {rho(subset, 0):10.2f} {rho(no_frp, 0):10.2f} "
-              f"{rho(subset, 1):10.2f} {rho(no_frp, 1):10.2f}"
-              f"    (n={len(subset)}, w/o FRP n={len(no_frp)})")
+        cells = "".join(f"{rho(subset, i):11.2f}{rho(no_frp, i):12.2f}"
+                        for i in range(len(cols)))
+        print(f"{label:12s}{cells}    (n={len(subset)}, w/o FRP n={len(no_frp)})")
 
     print("\nCheckpoints included:")
     for k in keys:
-        print(f"  {k[0]:14s} {k[1]:16s} {k[2]:9s} "
-              f"L2={pred[k][0]:9.3f}  FRAG={pred[k][1]:8.3f}  dES={delta[k]:+.4f}")
+        vals = "  ".join(f"{lab}={pred[k][i]:.3f}" for i, lab in enumerate(labels))
+        print(f"  {k[0]:14s} {k[1]:16s} {k[2]:9s} {vals}  dES={delta[k]:+.4f}")
 
 
 if __name__ == "__main__":
