@@ -19,8 +19,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "frag"))
 sys.path.insert(0, os.path.join(ROOT, "frp"))
-from predictor import score_unlearned, collect_input_norms, get_target_modules
+from predictor import collect_input_norms, get_target_modules
 from data import load_data
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from compute_predictors import predictors  # global L2 + FRAG in one streaming pass
 
 REPO = os.environ.get("OPEN_UNLEARNING", os.path.expanduser("~/open-unlearning"))
 HUB = os.environ.get("HF_HUB_CACHE", os.path.expanduser("~/.cache/huggingface/hub"))
@@ -47,7 +49,7 @@ METHODS = [
     ("GradDiff", "graddiff"),
     ("RMU",      "rmu"),
     ("SP",       "sp"),
-    ("FLP",      "flp"),
+    ("FRP",      "flp"),   # FRP is stored under its original "flp" tag
 ]
 
 
@@ -77,23 +79,25 @@ def main():
     fn = collect_input_norms(model, forget, DEV, targets)
     rn = collect_input_norms(model, retain, DEV, targets)
 
+    state = dict(model.state_dict())
+    scored = {n + ".weight" for n in targets}
+
     rows = []
-    print(f"\n{'Method':10}{'cosI':>10}{'cosJ':>10}{'FRAG':>10}{'FRAG%':>10}"
-          f"{'pre_ES':>10}{'post_ES':>10}{'ΔES':>9}", flush=True)
+    print(f"\n{'Method':10}{'L2':>12}{'cosF':>10}{'cosR':>10}{'FRAG':>10}{'FRAG%':>10}"
+          f"{'pre_Acc':>10}{'post_Acc':>10}{'dAcc':>9}", flush=True)
     for disp, name in METHODS:
         ck = os.path.join(CKDIR, f"{name}_wmdp_qwen14b")
         if not os.path.isdir(ck):
             print(f"  MISS ckpt {ck}", flush=True)
             continue
-        s = score_unlearned(model, fn, rn, ck, targets, gamma=GAMMA)
+        l2, frag, cos_f, cos_r = predictors(state, scored, ck, fn, rn, gamma=GAMMA)
         pre = read_cyber_acc(os.path.join(EVALDIR, f"{name}_wmdp_qwen14b_pre"))
         post = read_cyber_acc(os.path.join(EVALDIR, f"{name}_wmdp_qwen14b_post"))
         d_es = (post - pre) if (pre is not None and post is not None) else None
         row = {
-            "method": disp,
-            "cosI": s["cosI"], "cosJ": s["cosJ"], "FRAG": s["FRAG"],
-            "modules_used": s["modules_used"],
-            "pre_es": pre, "post_es": post, "d_es": d_es,
+            "method": disp, "L2": l2,
+            "cosF": cos_f, "cosR": cos_r, "FRAG": frag,
+            "pre_acc": pre, "post_acc": post, "d_acc": d_es,
             "ckpt": ck,
         }
         rows.append(row)
@@ -101,12 +105,12 @@ def main():
         des_str = f"{d_es:+.4f}" if d_es is not None else "  n/a"
         pre_str = f"{pre:.4f}" if pre is not None else "  n/a"
         post_str = f"{post:.4f}" if post is not None else "  n/a"
-        print(f"  {disp:8s}{s['cosI']:>+10.4f}{s['cosJ']:>+10.4f}"
-              f"{s['FRAG']:>+10.4f}{s['FRAG']*100:>+9.3f}%"
+        print(f"  {disp:8s}{l2:>12.3f}{cos_f:>+10.4f}{cos_r:>+10.4f}"
+              f"{frag:>+10.4f}{frag*100:>+9.3f}%"
               f"{pre_str:>10}{post_str:>10}{des_str:>9}", flush=True)
 
     csv_path = os.path.join(OUT_DIR, f"{TAG}_frag.csv")
-    cols = ["method", "cosI", "cosJ", "FRAG", "modules_used", "pre_es", "post_es", "d_es"]
+    cols = ["method", "L2", "cosF", "cosR", "FRAG", "pre_acc", "post_acc", "d_acc"]
     with open(csv_path, "w") as f:
         f.write(",".join(cols) + "\n")
         for r in rows:

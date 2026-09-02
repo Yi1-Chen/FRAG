@@ -60,7 +60,9 @@ def predictors(state, scored_keys, ckpt, forget_norms, retain_norms, gamma=1.0, 
     un = StreamReader(ckpt)
     sq = dot_f = dot_r = nrm_f = nrm_r = nrm_d = 0.0
     for key in set(un.m) & set(state):
-        W0 = state[key].float()
+        # the reference model may live on GPU (qwen14b_frag.py); checkpoint shards always
+        # stream in on CPU, so bring the original weight across before comparing
+        W0 = state[key].detach().to("cpu", torch.float32)
         d2 = (un.get(key).float() - W0) ** 2
         sq += float(d2.sum())
         if key not in scored_keys:
