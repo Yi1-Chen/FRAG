@@ -77,8 +77,9 @@ def predictors(state, scored_keys, ckpt, forget_norms, retain_norms, gamma=1.0, 
         dot_f += float((F * d2).sum()); nrm_f += float((F * F).sum())
         dot_r += float((R * d2).sum()); nrm_r += float((R * R).sum())
     dn = math.sqrt(nrm_d)
-    frag = dot_f / (math.sqrt(nrm_f) * dn) - gamma * dot_r / (math.sqrt(nrm_r) * dn)
-    return math.sqrt(sq), frag
+    cos_f = dot_f / (math.sqrt(nrm_f) * dn)   # A_f in Eq. (5)
+    cos_r = dot_r / (math.sqrt(nrm_r) * dn)   # A_r in Eq. (5)
+    return math.sqrt(sq), cos_f - gamma * cos_r, cos_f, cos_r
 
 
 def main():
@@ -102,8 +103,15 @@ def main():
     rv = RV_P[args.scale]
     runs = [(d, lambda s, t=t: f"{canonical}/canonical_{args.scale}_{t}{SUFFIX[s]}")
             for d, t in METHODS]
-    runs.append((f"FRP-RV(p={int(rv[1:]) / 100:.2f})",
-                 lambda s: f"{unlearn}/frprv_{args.scale}_{s}_{rv}"))
+    def rv_path(split):
+        # scripts/frp_tofu.sh writes frp_<scale>_<split>_p###; frprv_ is the original tag.
+        for prefix in ("frp", "frprv"):
+            p = f"{unlearn}/{prefix}_{args.scale}_{split}_{rv}"
+            if os.path.isdir(p):
+                return p
+        return f"{unlearn}/frp_{args.scale}_{split}_{rv}"
+
+    runs.append((f"FRP-RV(p={int(rv[1:]) / 100:.2f})", rv_path))
 
     rows = []
     print(f"{'method':16s} {'L2':>10s} {'FRAG%':>10s}    per-split L2 / FRAG%", flush=True)
@@ -117,9 +125,9 @@ def main():
                 break
             fn = torch.load(f"{NORMS}/{args.scale}_{split}_fn.pt", weights_only=True)
             rn = torch.load(f"{NORMS}/{args.scale}_{split}_rn.pt", weights_only=True)
-            l2, frag = predictors(state, scored, ckpt, fn, rn, gamma=args.gamma)
+            l2, frag, cos_f, cos_r = predictors(state, scored, ckpt, fn, rn, gamma=args.gamma)
             l2s.append(l2); frags.append(frag)
-            rows.append((args.scale, name, split, l2, frag * 100))
+            rows.append((args.scale, name, split, l2, frag * 100, cos_f * 100, cos_r * 100))
         if l2s:
             detail = "  ".join(f"{a:.3f}/{b * 100:.4f}" for a, b in zip(l2s, frags))
             print(f"{name:16s} {sum(l2s) / 3:10.3f} {sum(frags) / 3 * 100:10.3f}    {detail}",
@@ -128,9 +136,10 @@ def main():
     if args.csv:
         os.makedirs(os.path.dirname(args.csv) or ".", exist_ok=True)
         with open(args.csv, "w", encoding="utf-8") as f:
-            f.write("model,method,forget_split,L2,FRAG_pct\n")
-            for scale, name, split, l2, frag in rows:
-                f.write(f"LLaMA-3.2-{scale},{name},{split},{l2:.6f},{frag:.6f}\n")
+            f.write("model,method,forget_split,L2,FRAG_pct,cosF_pct,cosR_pct\n")
+            for scale, name, split, l2, frag, cf, cr in rows:
+                f.write(f"LLaMA-3.2-{scale},{name},{split},"
+                        f"{l2:.6f},{frag:.6f},{cf:.6f},{cr:.6f}\n")
         print(f"\nwrote {args.csv}")
 
 

@@ -28,10 +28,10 @@ Higher FRAG => update concentrated on forget-critical, NOT retain-critical, weig
 Self-contained: only needs  torch, transformers, safetensors.  No other dependencies.
 
 USAGE
-  python FRAG_predictor.py \
+  python frag/predictor.py \
       --original  <orig_model_path_or_HF_id> \
       --unlearned <unlearned_model_path> \
-      --forget_file forget.txt --retain_file retain.txt \
+      --forget_file calib/forget.txt --retain_file calib/retain.txt \
       [--target all] [--gamma 1.0] [--num_samples 128] [--max_length 256] [--json_out out.json]
 
   forget_file / retain_file:  one example per line (plain text, OR JSONL with a "text" field).
