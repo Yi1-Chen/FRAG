@@ -1,15 +1,23 @@
 #!/bin/bash
-# Canonical pipeline for ONE (method, scale):
-#   unlearn -> eval pure -> retain-only mask-free 1ep relearn -> eval post-relearn
+# One (method, scale, forget split) cell of Table 1, end to end:
+#   unlearn -> evaluate -> retain-split relearning attack (1 epoch, lr 1e-5) -> evaluate
 #
-# Usage: METHOD=RC SCALE=1B GPU=0 bash canonical_one.sh
+#   METHOD=RMU SCALE=1B FORGET_SPLIT=forget10 GPU=0 bash scripts/unlearn_baselines.sh
 #
-# Methods: RC, WR, GradAscent, GradDiff, NPO, SimNPO, RMU
-# Scales: 1B, 3B, 8B (LLaMA), Qwen1.5B, Qwen3B, Qwen7B
+# METHOD is one of:
+#   GradAscent GradDiff NPO SimNPO RMU   OpenUnlearning trainers, at its default settings
+#   SP                                   Selective Pruning (baselines/selective_pruning.py)
+#   RC                                   FRP itself (rank-space pruning); scripts/frp_tofu.sh
+#                                        is the more convenient entry point, since it also
+#                                        runs all three attacks and the retain veto
+#   WR                                   Wanda forget/retain ratio, not reported in the paper
 #
-# For 7B/8B scales, deletes BOTH RELEARN_DIR and UNLEARN_DIR after eval-post
-# succeeds (eval JSONs preserved). For smaller scales, only RELEARN_DIR is
-# deleted; UNLEARN_DIR is kept per existing convention.
+# SCALE: 1B, 3B, 8B (LLaMA), Qwen1.5B, Qwen3B, Qwen7B. The paper's Table 1 uses 1B and 3B.
+# ATTACK_SPLIT defaults to retain; scripts/attack.sh runs the forget and forget+retain
+# attacks against a checkpoint this script has produced.
+#
+# For 7B/8B, both the relearned and the unlearned checkpoint are deleted once the
+# post-attack evaluation has been written; smaller scales keep the unlearned checkpoint.
 
 set -u
 FRAG_REPO="${FRAG_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -186,6 +194,7 @@ else
     model.model_args.attn_implementation=eager \
     data/datasets@data.train=$([[ "${ATTACK_SPLIT:-retain}" == "retain" ]] && echo "TOFU_QA_$RETAIN_SPLIT" || echo "TOFU_QA_$FORGET_SPLIT") \
     trainer.args.num_train_epochs=1 \
+    trainer.args.learning_rate=1e-5 \
     trainer.args.eval_on_start=false \
     ++trainer.args.remove_unused_columns=false \
     ++trainer.args.optim=adamw_torch \
