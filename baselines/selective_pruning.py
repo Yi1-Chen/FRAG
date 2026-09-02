@@ -1,15 +1,16 @@
-"""
-Scoring functions:
-  1. activation_ratio  Original Selective Pruning (Pochinkov & Schoots 2024)
-  2. gradient_ratio    Gradient magnitude ratio (forget/retain)
-  3. cosine_score      My method: gradient directionality-aware scoring
+"""Selective Pruning (Pochinkov & Schoots, 2024), the neuron-level pruning baseline.
+
+It scores whole neurons by a forget/retain importance ratio and removes the top
+--mlp_frac of them. Table 1 and Table 2 use --scoring activation_ratio with
+mlp_frac=0.05 and cos_threshold=0.5 (Appendix B.1). The gradient_ratio and
+cosine_score variants are exploratory alternatives and are not used in the paper.
 
 Usage:
-    CUDA_VISIBLE_DEVICES=1 python selective_pruning_scored.py \
+    python baselines/selective_pruning.py \
         --model open-unlearning/tofu_Llama-3.2-1B-Instruct_full \
-        --forget_split forget10 --retain_split retain90 \
-        --scoring cosine_score --mlp_frac 0.05 \
-        --output_dir saves/unlearn/tofu_1B_forget10_CosineScore_5pct
+        --dataset tofu --forget_split forget10 --retain_split retain90 \
+        --scoring activation_ratio --mlp_frac 0.05 \
+        --output_dir saves/unlearn/tofu_1B_SP
 """
 
 import argparse

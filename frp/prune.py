@@ -1,4 +1,27 @@
-"""Wanda-based weight pruning for LLM unlearning."""
+"""FRP: Forget-Retain Pruning (Section 3.3), plus the weight-pruning baselines it is
+compared against.
+
+The method reported in the paper is --scoring rank_combo, which scores each weight in
+rank space within its output row:
+
+    s_ij = rank_j(x^f_j / x^r_j) + beta * rank_j(|W_ij|)
+
+and zeroes the top --sparsity fraction per row. x^f and x^r are per-input-channel
+activation norms on forget and retain calibration data (Wanda-style, Sun et al. 2024).
+--beta is the paper's magnitude prior lambda in Eq. (6), fixed at 0.05.
+
+The retain penalty (the paper's beta in Eq. (6)) is applied as a hard veto:
+--protect_by excl --protect_p P excludes the top-P fraction of retain-exclusive weights
+per row, scored by |W| * x^r / x^f, from being pruned. P=0 is plain FRP; Table 1 also
+reports P=0.15 at 1B and P=0.05 at 3B. See docs/REPRODUCE.md for the full symbol mapping.
+
+Usage:
+    python frp/prune.py --model <original> --dataset tofu \
+        --forget_split forget10 --retain_split retain90 \
+        --scoring rank_combo --beta 0.05 --sparsity 0.03 --target mlp \
+        --prune_mode shrink --shrink_factor 0 --num_samples 400 --seed 42 \
+        --protect_by excl --protect_p 0.15 --output_dir <out>
+"""
 
 import argparse
 import json
