@@ -1,0 +1,30 @@
+# Spearman rho between each attack-free predictor and post-attack Delta-ES.
+# Forget+retain relearning attack; healthy checkpoints only (GA excluded as
+# utility-collapsed). n=30 pooled over 5 methods x 3 splits x 2 models; the
+# without_FRP column drops every FRP checkpoint (n=24). More negative is better.
+#
+# Regenerate with:
+#   python analysis/table3_spearman.py \
+#     --predictors results/predictors_1b.csv results/predictors_3b.csv \
+#     --results results/table1_tofu_per_split.csv
+#
+# "published" is the FRAG column as printed in Table 3 of the paper. It does not
+# correspond to FRAG as Eq. (5) defines it (the gamma=1 gap, column "FRAG" below);
+# it tracks the single forget-alignment cosine cos(F, dW^2), i.e. gamma=0. See
+# docs/REPRODUCE.md for the full comparison.
+group,n,n_without_FRP,predictor,rho_all,rho_without_FRP
+LLaMA-3.2-1B,15,12,global_L2,-0.56,-0.36
+LLaMA-3.2-1B,15,12,FRAG,-0.66,-0.34
+LLaMA-3.2-1B,15,12,cos_F,-0.91,-0.83
+LLaMA-3.2-1B,15,12,cos_R,-0.90,-0.83
+LLaMA-3.2-1B,15,12,published,-0.92,-0.85
+LLaMA-3.2-3B,15,12,global_L2,-0.16,0.13
+LLaMA-3.2-3B,15,12,FRAG,-0.62,-0.36
+LLaMA-3.2-3B,15,12,cos_F,-0.77,-0.68
+LLaMA-3.2-3B,15,12,cos_R,-0.60,-0.66
+LLaMA-3.2-3B,15,12,published,-0.72,-0.71
+Pooled,30,24,global_L2,-0.36,-0.10
+Pooled,30,24,FRAG,-0.60,-0.31
+Pooled,30,24,cos_F,-0.76,-0.67
+Pooled,30,24,cos_R,-0.68,-0.66
+Pooled,30,24,published,-0.78,-0.74
