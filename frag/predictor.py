@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-FRAG_predictor.py — training-free predictors of LLM-unlearning relearning robustness.
+predictor.py — FRAG, a training-free predictor of relearning robustness (Section 3.2).
 
 Given an ORIGINAL model, an UNLEARNED model, and forget/retain calibration text, computes
 (per input channel j:  r_j = ||X^f_j|| / ||X^r_j||,  the forget/retain activation ratio):
 
-    I  = |W| * r            forget importance
-    J  = |W| * (1/r)        retain importance
-    ΔW = W_unlearned - W_original
-    cosI = cos(I, ΔW^2)              forget-alignment   (intermediate)
-    cosJ = cos(J, ΔW^2)              retain-alignment   (intermediate)
+    I  = |W| * r            forget importance                  (F, Eq. 3)
+    J  = |W| * (1/r)        retain importance                  (R, Eq. 4)
+    ΔW = W_unlearned - W_original                              (D = ΔW^2, Eq. 5)
+    cosI = cos(I, ΔW^2)              forget-alignment          (A_f, Eq. 5; intermediate)
+    cosJ = cos(J, ΔW^2)              retain-alignment          (A_r, Eq. 5; intermediate)
     FRAG  = cosI - gamma * cosJ       Forget-Retain Alignment Gap  (THE predictor)
+
+  Naming: I/J and cosI/cosJ are this file's names for the paper's F/R and A_f/A_r, and
+  gamma is the paper's retain-penalty lambda in Eq. (5), fixed at 1.
 
   FRAG is the net forget-minus-retain alignment; cosI and cosJ are only intermediates.
   Why the retain term (cosJ) is REQUIRED: robustness must be judged together with UTILITY, not
