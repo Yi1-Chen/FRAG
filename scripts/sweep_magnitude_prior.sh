@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# FRP β sensitivity sweep on LLaMA-3.2-1B / TOFU forget10.
-# Fixed: 3% MLP sparsity, prune_mode=zero, seed=42, 400 calib seq × 256 tok.
-# Variable: β ∈ {0.00, 0.01, 0.05, 0.10, 0.25, 0.50, 1.00}.
+# Table 6: FRP magnitude-prior sweep on LLaMA-3.2-1B / TOFU forget10.
 #
-# β=0.05 (the paper headline) is reused from §4.3 ablation run if present —
-# saves ~15min and matches FRIP canonical exactly.
+# NOTE ON NAMING. This sweeps the code flag --beta, which is the paper's magnitude
+# prior lambda in Eq. (6), NOT the paper's beta (that is the retain penalty, which the
+# code applies as --protect_p). See docs/REPRODUCE.md for the full symbol mapping.
 #
-# Pipeline per β: prune → eval-pre → L2-pre → 1ep retain90 relearn →
-# eval-post → L2-post → cleanup RELEARN_DIR.  FRAG batched at end.
+# Fixed: 3% MLP sparsity, weights zeroed, seed 42, 400 calibration sequences of 256
+# tokens. Variable: --beta in {0.00, 0.01, 0.05, 0.10, 0.25, 0.50, 1.00}; 0.05 is the
+# headline value and is reused from the scoring ablation if that run is already present.
 #
-# 6 new β distributed across GPU 0-3 in two-job-per-GPU queues.
+# Per point: prune -> eval -> L2 -> 1 epoch retain-split relearn -> eval -> L2 ->
+# delete the relearned checkpoint. FRAG is scored for all points at the end.
+# Work is distributed across GPUs 0-3, two jobs per GPU.
 
 set -u
 cd ~/open-unlearning

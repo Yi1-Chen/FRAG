@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# §4.3 FLP Ablation — full pipeline on LLaMA-3.2-1B + TOFU forget10.
+# Table 5: FRP scoring ablation on LLaMA-3.2-1B / TOFU forget10, plus a target-layer
+# comparison. Historical note: FRP is tagged FRIP/RC in this script and in checkpoint
+# names; r is the forget/retain activation ratio x^f/x^r.
 #
 # Two ablation tables:
 #   A) Scoring (magnitude-duality):  5 variants at 3% MLP sparsity

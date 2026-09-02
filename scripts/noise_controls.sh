@@ -1,11 +1,11 @@
 #!/bin/bash
-# Canonical pipeline for the NOISE counterfactual:
+# Appendix A.2 / Figure 2: the direction-blind noise control.
 #   inject Gaussian noise -> [optional retain-repair 1ep] -> eval pure
 #   -> retain-only mask-free 1ep relearn -> eval post-relearn
 #
 # Usage:
-#   SIGMA=0.004 GPU=0 bash canonical_noise.sh         # N1 (pure noise)
-#   SIGMA=0.004 WD=1 GPU=1 bash canonical_noise.sh    # N2 (noise + retain-repair = Siddiqui Weight Distortion)
+#   SIGMA=0.004 GPU=0 bash scripts/noise_controls.sh         # N1 (pure noise)
+#   SIGMA=0.004 WD=1 GPU=1 bash scripts/noise_controls.sh    # N2 (noise + retain-repair = Siddiqui Weight Distortion)
 #
 # Reference: Siddiqui et al. 2025 §6.1.
 #   - Weight Distortion (WD)  = isotropic Gaussian noise on weights + retain finetune (this script with WD=1)

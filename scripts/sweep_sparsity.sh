@@ -1,8 +1,7 @@
 #!/bin/bash
-# Full 1B FLP sparsity sweep. Reuses canonical_one.sh per point so that the
-# 3.0% row is bit-exact with the main Table-1 FLP/1B/forget10 cell.
-#
-# CANONICAL PROTOCOL: PRUNE_MODE=zero (matches main table).
+# Table 7: FRP sparsity sweep on LLaMA-3.2-1B / TOFU forget10. Each point reuses
+# scripts/unlearn_baselines.sh so that the 3.0% row is bit-exact with the FRP cell of
+# Table 1. Weights are zeroed (PRUNE_MODE=zero), matching the main table.
 # Per-point: prune -> eval-pure -> L2 -> retain1ep relearn -> eval-post -> L2 -> cleanup.
 # Cleanup: delete RELEARN_DIR + UNLEARN_DIR after L2 (eval JSONs + L2 JSONs preserved).
 #
