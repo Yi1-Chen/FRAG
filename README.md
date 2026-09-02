@@ -96,9 +96,9 @@ FRP's advantage survives four matched controls, each holding one confound fixed:
 
 ## Status
 
-Code release is in preparation. This repository currently holds only this
-README; the implementation, configs, and scripts to reproduce the TOFU and
-WMDP-cyber results will be added here.
+The FRAG predictor, FRP pruning, the relearning-attack pipelines, and the scripts
+that regenerate the tables above are in this repository. See
+[docs/REPRODUCE.md](docs/REPRODUCE.md) for setup and one command per table.
 
 ## Paper
 
